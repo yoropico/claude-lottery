@@ -9,33 +9,21 @@ import notification
 import time
 
 
-def _setup_and_login():
+def _setup_and_login() -> tuple[auth.AuthController, str, str | None]:
     load_dotenv(override=True)
     username = os.environ.get('USERNAME')
     password = os.environ.get('PASSWORD')
-    slack_webhook_url = os.environ.get('SLACK_WEBHOOK_URL')
-    if slack_webhook_url and slack_webhook_url.startswith("YOUR_"):
-        slack_webhook_url = None
 
-    discord_webhook_url = os.environ.get('DISCORD_WEBHOOK_URL')
-    if discord_webhook_url and discord_webhook_url.startswith("YOUR_"):
-        discord_webhook_url = None
-
-    telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
-    if telegram_bot_token and telegram_bot_token.startswith("YOUR_"):
-        telegram_bot_token = None
-
-    if slack_webhook_url:
-        webhook_url = slack_webhook_url
-    else:
-        webhook_url = discord_webhook_url
+    webhook_url = os.environ.get('DISCORD_WEBHOOK_URL')
+    if webhook_url and webhook_url.startswith("YOUR_"):
+        webhook_url = None
 
     auth_ctrl = auth.AuthController()
     auth_ctrl.login(username, password)
 
     return auth_ctrl, username, webhook_url
 
-def buy_lotto645(authCtrl: auth.AuthController, cnt: int, mode: str):
+def buy_lotto645(authCtrl: auth.AuthController, cnt: int, mode: str) -> dict:
     lotto = lotto645.Lotto645()
     _mode = lotto645.Lotto645Mode[mode.upper()]
     response = lotto.buy_lotto645(authCtrl, cnt, _mode)
@@ -48,7 +36,7 @@ def check_winning_lotto645(authCtrl: auth.AuthController) -> dict:
     item['balance'] = authCtrl.get_user_balance()
     return item
 
-def buy_win720(authCtrl: auth.AuthController, username: str):
+def buy_win720(authCtrl: auth.AuthController, username: str) -> dict:
     pension = win720.Win720()
     response = pension.buy_Win720(authCtrl, username)
     response['balance'] = authCtrl.get_user_balance()
@@ -60,7 +48,7 @@ def check_winning_win720(authCtrl: auth.AuthController) -> dict:
     item['balance'] = authCtrl.get_user_balance()
     return item
 
-def send_message(mode: int, lottery_type: int, response: dict, webhook_url: str):
+def send_message(mode: int, lottery_type: int, response: dict, webhook_url: str) -> None:
     notify = notification.Notification()
 
     if mode == 0:

@@ -1,10 +1,13 @@
-import requests
+import logging
 import re
+
+import requests
+
+logger = logging.getLogger(__name__)
+
 
 class Notification:
     def send_lotto_buying_message(self, body: dict, webhook_url: str) -> None:
-        assert type(webhook_url) == str
-
         result = body.get("result", {})
         if result.get("resultMsg", "FAILURE").upper() != "SUCCESS":  
             message = f"로또 구매 실패 (`{result.get('resultMsg', 'Unknown Error')}`) 남은잔액 : {body.get('balance', '확인불가')}"
@@ -16,8 +19,6 @@ class Notification:
         self._send_discord_webhook(webhook_url, message)
 
     def make_lotto_number_message(self, lotto_number: list) -> str:
-        assert type(lotto_number) == list
-
         # parse list without last number 3
         lotto_number = [x[:-1] for x in lotto_number]
         
@@ -58,10 +59,7 @@ class Notification:
             formatted_numbers.append(formatted_number)
         return "\n".join(formatted_numbers)
 
-    def send_lotto_winning_message(self, winning: dict, webhook_url: str) -> None: 
-        assert type(winning) == dict
-        assert type(webhook_url) == str
-
+    def send_lotto_winning_message(self, winning: dict, webhook_url: str) -> None:
         balance_str = winning.get('balance', '확인불가')
         try: 
             round = winning["round"]
@@ -106,10 +104,7 @@ class Notification:
             self._send_discord_webhook(webhook_url, message)
             return
 
-    def send_win720_winning_message(self, winning: dict, webhook_url: str) -> None: 
-        assert type(winning) == dict
-        assert type(webhook_url) == str
-
+    def send_win720_winning_message(self, winning: dict, webhook_url: str) -> None:
         balance_str = winning.get('balance', '확인불가')
         try:
             if "win720_details" in winning and winning["win720_details"]:
@@ -136,10 +131,13 @@ class Notification:
             message = f"연금복권 - 다음 기회에... 🫠 (남은잔액 : {balance_str})"
             self._send_discord_webhook(webhook_url, message)
 
-    def _send_discord_webhook(self, webhook_url: str, message: str) -> None:        
+    def _send_discord_webhook(self, webhook_url: str, message: str) -> None:
         if not webhook_url:
-            print(f"[Info] Webhook URL not found. Message: {message}")
+            logger.info("Webhook URL not configured. Message: %s", message)
             return
-        
-        payload = { "content": message }
-        requests.post(webhook_url, json=payload)
+
+        try:
+            res = requests.post(webhook_url, json={"content": message}, timeout=10)
+            res.raise_for_status()
+        except requests.RequestException as e:
+            logger.error("Discord webhook send failed: %s", e)
