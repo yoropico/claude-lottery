@@ -1,12 +1,13 @@
+import argparse
 import os
-import sys
+import time
+
 from dotenv import load_dotenv
 
 import auth
 import lotto645
-import win720
 import notification
-import time
+import win720
 
 
 def _setup_and_login() -> tuple[auth.AuthController, str, str | None]:
@@ -118,24 +119,22 @@ def win720_check():
     response = check_winning_win720(auth_ctrl)
     send_message(0, 1, response=response, webhook_url=discord_webhook_url)
 
-def run():
-    if len(sys.argv) < 2:
-        print("Usage: python controller.py [buy|check]")
-        return
+COMMANDS = {
+    "buy": buy,
+    "check": check,
+    "buy_lotto": lotto_buy,
+    "buy_win720": win720_buy,
+    "check_lotto": lotto_check,
+    "check_win720": win720_check,
+}
 
-    if sys.argv[1] == "buy":
-        buy()
-    elif sys.argv[1] == "check":
-        check()
-    elif sys.argv[1] == "buy_lotto":
-        lotto_buy()
-    elif sys.argv[1] == "buy_win720":
-        win720_buy()
-    elif sys.argv[1] == "check_lotto":
-        lotto_check()
-    elif sys.argv[1] == "check_win720":
-        win720_check()
-  
+
+def run() -> None:
+    parser = argparse.ArgumentParser(description="동행복권 자동 구매/당첨 확인")
+    parser.add_argument("command", choices=COMMANDS.keys())
+    args = parser.parse_args()
+    COMMANDS[args.command]()
+
 
 if __name__ == "__main__":
     run()

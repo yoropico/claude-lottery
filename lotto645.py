@@ -182,17 +182,24 @@ class Lotto645:
                 return str(last_drawn_round + 1)
             else:
                  raise ValueError("lottoDrwNo not found")
-        except Exception as e:
-            base_date = datetime.datetime(2024, 12, 28)
-            base_round = 1152
-            
+        except Exception:
             today = datetime.datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
-            
-            days_ahead = (5 - today.weekday()) % 7
-            next_saturday = today + datetime.timedelta(days=days_ahead)
-            
-            weeks = (next_saturday - base_date).days // 7
-            return str(base_round + weeks)
+            return str(compute_next_round(today))
+
+
+# Anchor: 2024-12-28 (토) was lotto6/45 draw #1152. Verified against the
+# canonical series (1st draw = 2002-12-07). Used as a site-scrape fallback so
+# we can still submit a purchase even if the main page HTML changes.
+_ANCHOR_DATE = datetime.datetime(2024, 12, 28)
+_ANCHOR_ROUND = 1152
+
+
+def compute_next_round(today: datetime.datetime) -> int:
+    """Return the upcoming Saturday's draw number by weekly offset from anchor."""
+    days_ahead = (5 - today.weekday()) % 7
+    next_saturday = today + datetime.timedelta(days=days_ahead)
+    weeks = (next_saturday - _ANCHOR_DATE).days // 7
+    return _ANCHOR_ROUND + weeks
 
 
 
